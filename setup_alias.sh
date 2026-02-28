@@ -8,8 +8,8 @@ echo "Building SimpleFileSync..."
 cd "$DIR"
 dotnet build -c Release
 
-# Path to the compiled executable shim (adjust framework version if needed)
-BINARY_PATH="$DIR/bin/Release/net9.0/SimpleFileSync"
+# Path to the compiled executable DLL (use Debug since standard dotnet build outputs there)
+BINARY_PATH="$DIR/bin/Debug/net9.0/SimpleFileSync.dll"
 
 # Add the bash function to .zshrc if it doesn't already exist
 if grep -q "function sfs {" ~/.zshrc; then
@@ -32,10 +32,10 @@ else
     echo "" >> ~/.zshrc
     echo "  if [[ \"\$1\" == \"server\" || \$RUN_IN_BG -eq 1 ]]; then" >> ~/.zshrc
     echo "    echo \"Starting SimpleFileSync in the background...\"" >> ~/.zshrc
-    echo "    nohup \"\$EXE_PATH\" \"\${NEW_ARGS[@]}\" >/dev/null 2>&1 &" >> ~/.zshrc
+    echo "    nohup dotnet \"\$EXE_PATH\" \"\${NEW_ARGS[@]}\" >/dev/null 2>&1 &" >> ~/.zshrc
     echo "    echo \"Running (PID \$!)\"" >> ~/.zshrc
     echo "  else" >> ~/.zshrc
-    echo "    \"\$EXE_PATH\" \"\${NEW_ARGS[@]}\"" >> ~/.zshrc
+    echo "    dotnet \"\$EXE_PATH\" \"\${NEW_ARGS[@]}\"" >> ~/.zshrc
     echo "  fi" >> ~/.zshrc
     echo "}" >> ~/.zshrc
     echo "Successfully added 'sfs' function to ~/.zshrc"
