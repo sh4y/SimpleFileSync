@@ -19,11 +19,12 @@ public static class FileSyncClient
         // 10. Set up FileSystemWatcher to monitor folder
         using var watcher = new FileSystemWatcher(sourceFolder);
         watcher.IncludeSubdirectories = true;
-        watcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
+        watcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime | NotifyFilters.Size;
 
-        // 11. Add event handlers for file Creation and Change events
+        // 11. Add event handlers for file Creation, Change, and Rename events (macOS heavily uses renames for screenshot creation)
         watcher.Created += (s, e) => OnFileChanged(e.FullPath, sourceFolder, serverIp, delaySeconds);
         watcher.Changed += (s, e) => OnFileChanged(e.FullPath, sourceFolder, serverIp, delaySeconds);
+        watcher.Renamed += (s, e) => OnFileChanged(e.FullPath, sourceFolder, serverIp, delaySeconds);
         
         watcher.EnableRaisingEvents = true;
 
