@@ -6,7 +6,7 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 # Build the project to ensure the executable exists
 echo "Building SimpleFileSync..."
 cd "$DIR"
-dotnet build -c Release
+dotnet build
 
 # Path to the compiled executable DLL (use Debug since standard dotnet build outputs there)
 BINARY_PATH="$DIR/bin/Debug/net9.0/SimpleFileSync.dll"
