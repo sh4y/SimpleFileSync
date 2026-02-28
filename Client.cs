@@ -27,8 +27,8 @@ public static class FileSyncClient
         
         watcher.EnableRaisingEvents = true;
 
-        Console.WriteLine("[Client] Press [Enter] to exit.");
-        Console.ReadLine();
+        Console.WriteLine("[Client] Running. Press Ctrl+C to stop.");
+        new System.Threading.ManualResetEvent(false).WaitOne();
     }
 
     private static async void OnFileChanged(string fullPath, string rootFolder, string serverIp, int delaySeconds)
