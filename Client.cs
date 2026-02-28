@@ -95,7 +95,10 @@ public static class FileSyncClient
             Console.WriteLine($"[Client] File is stable: {fullPath}, starting transfer...");
 
             // 14. Determine relative path to recreate same structure on Server
-            string relativePath = Path.GetRelativePath(rootFolder, fullPath);
+            // Prefix the relative path with the machine name and the source folder's name 
+            // so the server separates files by client and folder.
+            string folderName = new DirectoryInfo(rootFolder).Name;
+            string relativePath = Path.Combine(Environment.MachineName, folderName, Path.GetRelativePath(rootFolder, fullPath));
 
             // 15. Connect to Server
             using TcpClient client = new TcpClient(serverIp, Program.PORT);
