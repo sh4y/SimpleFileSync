@@ -8,18 +8,18 @@ public static class FileSyncClient
 {
     private static readonly ConcurrentDictionary<string, DateTime> _lastSent = new ConcurrentDictionary<string, DateTime>();
 
-    public static void RunClient(string serverIp, string sourceFolder, int delaySeconds, bool init)
+    public static void RunClient(string serverIp, string sourceFolder, int delaySeconds, bool init, int port)
     {
         // 9. Ensure source folder exists
         Directory.CreateDirectory(sourceFolder);
         Console.WriteLine($"[Client] Watching folder: {sourceFolder}");
-        Console.WriteLine($"[Client] Sending changes to server at {serverIp}:{Program.PORT}");
+        Console.WriteLine($"[Client] Sending changes to server at {serverIp}:{port}");
         Console.WriteLine($"[Client] Wait clock set to {delaySeconds} seconds.");
 
         if (init)
         {
             Console.WriteLine($"[Client] Init mode: synchronizing existing files...");
-            _ = Task.Run(() => SyncExistingFiles(sourceFolder, serverIp));
+            _ = Task.Run(() => SyncExistingFiles(sourceFolder, serverIp, port));
         }
 
         // 10. Set up FileSystemWatcher to monitor folder
@@ -28,9 +28,9 @@ public static class FileSyncClient
         watcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime | NotifyFilters.Size;
 
         // 11. Add event handlers for file Creation, Change, and Rename events (macOS heavily uses renames for screenshot creation)
-        watcher.Created += (s, e) => OnFileChanged(e.FullPath, sourceFolder, serverIp, delaySeconds);
-        watcher.Changed += (s, e) => OnFileChanged(e.FullPath, sourceFolder, serverIp, delaySeconds);
-        watcher.Renamed += (s, e) => OnFileChanged(e.FullPath, sourceFolder, serverIp, delaySeconds);
+        watcher.Created += (s, e) => OnFileChanged(e.FullPath, sourceFolder, serverIp, delaySeconds, port);
+        watcher.Changed += (s, e) => OnFileChanged(e.FullPath, sourceFolder, serverIp, delaySeconds, port);
+        watcher.Renamed += (s, e) => OnFileChanged(e.FullPath, sourceFolder, serverIp, delaySeconds, port);
         
         watcher.EnableRaisingEvents = true;
 
@@ -38,7 +38,7 @@ public static class FileSyncClient
         new System.Threading.ManualResetEvent(false).WaitOne();
     }
 
-    private static async void OnFileChanged(string fullPath, string rootFolder, string serverIp, int delaySeconds)
+    private static async void OnFileChanged(string fullPath, string rootFolder, string serverIp, int delaySeconds, int port)
     {
         try
         {
@@ -101,7 +101,7 @@ public static class FileSyncClient
             
             Console.WriteLine($"[Client] File is stable: {fullPath}, starting transfer...");
 
-            await SendFileAsync(fullPath, rootFolder, serverIp);
+            await SendFileAsync(fullPath, rootFolder, serverIp, port);
         }
         catch (Exception ex)
         {
@@ -109,14 +109,14 @@ public static class FileSyncClient
         }
     }
 
-    private static async Task SyncExistingFiles(string sourceFolder, string serverIp)
+    private static async Task SyncExistingFiles(string sourceFolder, string serverIp, int port)
     {
         try
         {
             var files = Directory.GetFiles(sourceFolder, "*.*", SearchOption.AllDirectories);
             foreach (var file in files)
             {
-                await SendFileAsync(file, sourceFolder, serverIp);
+                await SendFileAsync(file, sourceFolder, serverIp, port);
             }
             Console.WriteLine($"[Client] Init complete. {files.Length} files synchronized.");
         }
@@ -126,7 +126,7 @@ public static class FileSyncClient
         }
     }
 
-    private static async Task SendFileAsync(string fullPath, string rootFolder, string serverIp)
+    private static async Task SendFileAsync(string fullPath, string rootFolder, string serverIp, int port)
     {
         try
         {
@@ -137,7 +137,7 @@ public static class FileSyncClient
             string relativePath = Path.Combine(Environment.MachineName, folderName, Path.GetRelativePath(rootFolder, fullPath));
 
             // 15. Connect to Server
-            using TcpClient client = new TcpClient(serverIp, Program.PORT);
+            using TcpClient client = new TcpClient(serverIp, port);
             using var stream = client.GetStream();
             using var writer = new BinaryWriter(stream);
             

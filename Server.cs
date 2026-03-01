@@ -5,14 +5,14 @@ using System.Threading.Tasks;
 
 public static class FileSyncServer
 {
-    public static async Task RunServer(string targetFolder)
+    public static async Task RunServer(string targetFolder, int port = Program.PORT)
     {
         // 2. Ensure target folder exists
         Directory.CreateDirectory(targetFolder);
-        Console.WriteLine($"[Server] Listening on port {Program.PORT}. Saving files to: {targetFolder}");
+        Console.WriteLine($"[Server] Listening on port {port}. Saving files to: {targetFolder}");
 
         // 3. Start TCP Listener
-        TcpListener listener = TcpListener.Create(Program.PORT);
+        TcpListener listener = TcpListener.Create(port);
         listener.Start();
 
         while (true)
@@ -37,21 +37,7 @@ public static class FileSyncServer
                 // 6. Read file length
                 long fileLength = reader.ReadInt64();
                 
-                // Security Check: Prevent Path Traversal
-                string targetFolderFullPath = Path.GetFullPath(targetFolder);
-                if (!targetFolderFullPath.EndsWith(Path.DirectorySeparatorChar.ToString()))
-                {
-                    targetFolderFullPath += Path.DirectorySeparatorChar;
-                }
-                
-                // Trim leading slashes to prevent absolute path overriding Path.Combine
-                string destinationPath = Path.GetFullPath(Path.Combine(targetFolderFullPath, relativePath.TrimStart('/', '\\')));
-                
-                if (!destinationPath.StartsWith(targetFolderFullPath, StringComparison.OrdinalIgnoreCase))
-                {
-                    Console.WriteLine($"[Server] WARNING: Path traversal attempt detected. Skipping file: {relativePath}");
-                    return; // Abort processing and close connection
-                }
+                string destinationPath = Path.Combine(targetFolder, relativePath);
                 
                 // 7. Ensure destination directory exists
                 Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);

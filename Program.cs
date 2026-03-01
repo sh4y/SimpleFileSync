@@ -20,16 +20,43 @@ class Program
 
         if (mode == "server")
         {
-            string folder = args.Length > 1 ? args[1] : "./SyncTarget";
-            await FileSyncServer.RunServer(folder);
+            string folder = "./SyncTarget";
+            int port = PORT;
+
+            var serverArgs = new List<string>(args.Skip(1));
+            
+            int portIndex = serverArgs.IndexOf("--port");
+            if (portIndex >= 0 && portIndex < serverArgs.Count - 1)
+            {
+                if (int.TryParse(serverArgs[portIndex + 1], out int p)) port = p;
+                serverArgs.RemoveAt(portIndex);
+                serverArgs.RemoveAt(portIndex);
+            }
+
+            if (serverArgs.Count >= 1)
+            {
+                folder = serverArgs[0];
+            }
+
+            await FileSyncServer.RunServer(folder, port);
         }
         else if (mode == "client")
         {
             string ip = "127.0.0.1";
             string folder = "./SyncSource";
             int delaySeconds = 15;
+            int port = PORT;
 
             var clientArgs = new List<string>(args.Skip(1));
+            
+            // Allow configurable port e.g., --port 8080
+            int clientPortIndex = clientArgs.IndexOf("--port");
+            if (clientPortIndex >= 0 && clientPortIndex < clientArgs.Count - 1)
+            {
+                if (int.TryParse(clientArgs[clientPortIndex + 1], out int p)) port = p;
+                clientArgs.RemoveAt(clientPortIndex);
+                clientArgs.RemoveAt(clientPortIndex);
+            }
             
             // Allow configurable delay e.g., --delay 30
             int delayIndex = clientArgs.IndexOf("--delay");
@@ -66,7 +93,7 @@ class Program
                 folder = clientArgs[1];
             }
 
-            FileSyncClient.RunClient(ip, folder, delaySeconds, init);
+            FileSyncClient.RunClient(ip, folder, delaySeconds, init, port);
         }
         else
         {
@@ -77,7 +104,7 @@ class Program
     static void PrintUsage()
     {
         Console.WriteLine("Usage:");
-        Console.WriteLine("  Server: sfs server <optional_folder>");
-        Console.WriteLine("  Client: sfs client <optional_server_ip> <optional_folder> [--delay <seconds>] [--init]");
+        Console.WriteLine("  Server: sfs server <optional_folder> [--port <port>]");
+        Console.WriteLine("  Client: sfs client <optional_server_ip> <optional_folder> [--delay <seconds>] [--init] [--port <port>]");
     }
 }
