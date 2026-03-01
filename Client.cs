@@ -8,13 +8,19 @@ public static class FileSyncClient
 {
     private static readonly ConcurrentDictionary<string, DateTime> _lastSent = new ConcurrentDictionary<string, DateTime>();
 
-    public static void RunClient(string serverIp, string sourceFolder, int delaySeconds)
+    public static void RunClient(string serverIp, string sourceFolder, int delaySeconds, bool init)
     {
         // 9. Ensure source folder exists
         Directory.CreateDirectory(sourceFolder);
         Console.WriteLine($"[Client] Watching folder: {sourceFolder}");
         Console.WriteLine($"[Client] Sending changes to server at {serverIp}:{Program.PORT}");
         Console.WriteLine($"[Client] Wait clock set to {delaySeconds} seconds.");
+
+        if (init)
+        {
+            Console.WriteLine($"[Client] Init mode: synchronizing existing files...");
+            _ = Task.Run(() => SyncExistingFiles(sourceFolder, serverIp));
+        }
 
         // 10. Set up FileSystemWatcher to monitor folder
         using var watcher = new FileSystemWatcher(sourceFolder);
@@ -95,6 +101,35 @@ public static class FileSyncClient
             
             Console.WriteLine($"[Client] File is stable: {fullPath}, starting transfer...");
 
+            await SendFileAsync(fullPath, rootFolder, serverIp);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Client] Failed to process {fullPath}: {ex.Message}");
+        }
+    }
+
+    private static async Task SyncExistingFiles(string sourceFolder, string serverIp)
+    {
+        try
+        {
+            var files = Directory.GetFiles(sourceFolder, "*.*", SearchOption.AllDirectories);
+            foreach (var file in files)
+            {
+                await SendFileAsync(file, sourceFolder, serverIp);
+            }
+            Console.WriteLine($"[Client] Init complete. {files.Length} files synchronized.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Client] Failed to complete init sync: {ex.Message}");
+        }
+    }
+
+    private static async Task SendFileAsync(string fullPath, string rootFolder, string serverIp)
+    {
+        try
+        {
             // 14. Determine relative path to recreate same structure on Server
             // Prefix the relative path with the machine name and the source folder's name 
             // so the server separates files by client and folder.

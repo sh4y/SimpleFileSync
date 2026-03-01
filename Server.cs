@@ -37,7 +37,21 @@ public static class FileSyncServer
                 // 6. Read file length
                 long fileLength = reader.ReadInt64();
                 
-                string destinationPath = Path.Combine(targetFolder, relativePath);
+                // Security Check: Prevent Path Traversal
+                string targetFolderFullPath = Path.GetFullPath(targetFolder);
+                if (!targetFolderFullPath.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                {
+                    targetFolderFullPath += Path.DirectorySeparatorChar;
+                }
+                
+                // Trim leading slashes to prevent absolute path overriding Path.Combine
+                string destinationPath = Path.GetFullPath(Path.Combine(targetFolderFullPath, relativePath.TrimStart('/', '\\')));
+                
+                if (!destinationPath.StartsWith(targetFolderFullPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"[Server] WARNING: Path traversal attempt detected. Skipping file: {relativePath}");
+                    return; // Abort processing and close connection
+                }
                 
                 // 7. Ensure destination directory exists
                 Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);

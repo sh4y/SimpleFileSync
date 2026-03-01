@@ -45,9 +45,28 @@ sfs client ./SourceFolder
 
 # Run the client cleanly in the background as a daemon
 sfs client 192.168.1.100 /local/path/to/media -d
+
+# Send all existing files in the directory immediately on first run, then watch for changes
+sfs client 192.168.1.100 /local/path/to/media --init
 ```
 
 ## Quick Start (Testing on a Single Machine)
 1. Open Terminal A: `sfs server ./TargetFolder`
 2. Open Terminal B: `sfs client ./SourceFolder --delay 3`
 3. Add a file into `./SourceFolder`. Watch it appear in `./TargetFolder` after 3 seconds!
+
+## Command Reference
+
+### Server
+`sfs server [<target_folder>]`
+* `<target_folder>`: (Optional) Path to store received files. Defaults to `./SyncTarget`.
+
+### Client
+`sfs client [<server_ip>] [<source_folder>] [options]`
+* `<server_ip>`: (Optional) IP address of the server. Defaults to `127.0.0.1`.
+* `<source_folder>`: (Optional) Path to folder you want to watch. Defaults to `./SyncSource`.
+
+**Client Options:**
+* `--delay <seconds>`: Number of seconds to wait before transferring a file after detecting it (Defaults to 15s).
+* `--init`: Forces the client to immediately sync all existing files in the watched directory when it starts up.
+* `-d` or `--daemon`: Run the `sfs` client in the background.

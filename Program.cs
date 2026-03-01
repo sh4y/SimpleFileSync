@@ -40,6 +40,14 @@ class Program
                 clientArgs.RemoveAt(delayIndex);
             }
 
+            bool init = false;
+            int initIndex = clientArgs.IndexOf("--init");
+            if (initIndex >= 0)
+            {
+                init = true;
+                clientArgs.RemoveAt(initIndex);
+            }
+
             if (clientArgs.Count == 1)
             {
                 // If only one extra argument is provided, check if it looks like an IP or localhost
@@ -58,7 +66,7 @@ class Program
                 folder = clientArgs[1];
             }
 
-            FileSyncClient.RunClient(ip, folder, delaySeconds);
+            FileSyncClient.RunClient(ip, folder, delaySeconds, init);
         }
         else
         {
@@ -70,6 +78,6 @@ class Program
     {
         Console.WriteLine("Usage:");
         Console.WriteLine("  Server: sfs server <optional_folder>");
-        Console.WriteLine("  Client: sfs client <optional_server_ip> <optional_folder> [--delay <seconds>]");
+        Console.WriteLine("  Client: sfs client <optional_server_ip> <optional_folder> [--delay <seconds>] [--init]");
     }
 }
